@@ -35,14 +35,204 @@ def main():
     # 1. Loading Datasets and Creating Dataloaders
     # =============================================
 
-    print("Processing: Loading datasets and creating dataloaders")
+    print("Process: Loading datasets and creating dataloaders...")
 
     train_loader, val_loader, vocab, = create_dataloaders(
-        train_csv='data/train.csv'
-        test_csv='data/test.csv'
+        train_csv='data/train.csv',
+        test_csv='data/test.csv',
         batch_size=BATCH_SIZE,
         max_seq_length=MAX_SEQ_LENGTH
     )
+
+    vocab_size = len(vocab)
+    print(f'Vocabulary size: {vocab_size}')
+
+    # =======================
+    # 2. Initializing Models
+    # =======================
+
+    print("Process: Initializing models...")
+
+    baseline_model = BaselineModel( #Initializing the baseline model
+        vocab_size=vocab_size,
+        embed_dim=EMBED_DIM,
+        hidden_dim=HIDDEN_DIM,
+        freeze_embeddings=FREEZE_EMBEDDINGS
+    ).to(DEVICE)
+
+    cnn_model = EmotionCNN( #Initializing the cnn model
+        vocab_size=vocab_size,
+        embed_dim=EMBED_DIM,
+        num_filters=NUM_FILTERS,
+        hidden_dim=HIDDEN_DIM,
+        dropout_rate=DROPOUT_RATE,
+        freeze_embeddings=FREEZE_EMBEDDINGS
+    ).to(DEVICE)
+
+    # ========================================
+    # 3. Loading Pre-Trained GloVe Embeddings
+    # ========================================
+
+    print("Process: Loading GloVe Embeddings")
+
+    """
+
+    glove_weights = torch.load(insert path to glove weights here later)
+    load_glove_weights(baseline_model, glove_weights, freeze=FREEZE_EMBEDDINGS)
+    load_glove_cnn(cnn_model, glove_weights, freeze=FREEZE_EMBEDDINGS)
+
+    """
+
+    # ====================================================
+    # 4. Defining the Loss Function and the Optimizers
+    # ====================================================
+
+    criterion = nn.CrossEntropyLoss() #This is the loss function
+
+    #Optimizers over here (using Adam)
+    optimizer_baseline = optim.Adam(baseline_model.parameters(), lr=LEARNING_RATE)
+    optimizer_cnn = optim.Adam(cnn_model.parameters(), lr=LEARNING_RATE)
+
+    # =================
+    # 5. Training Loop
+    # =================
+    print("Process: Initiating training loop...")
+
+    for epoch in range(NUM_EPOCHS): #Looping for the number of epochs stated
+        epoch_start = time.time() #Record the start time
+
+        #Training the baseline model
+        train_loss_b, train_acc_b = train_one_epoch(
+            baseline_model, 
+            train_loader,
+            optimizer_baseline,
+            criterion,
+            DEVICE)
+        
+        #Training the cnn model
+        train_loss_c, train_acc_c = train_one_epoch(
+            cnn_model, 
+            train_loader,
+            optimizer_cnn,
+            criterion,
+            DEVICE)
+        
+        #Evaluating the baseline model
+        val_loss_b, val_acc_b = evaluate(baseline_model, val_loader, criterion, DEVICE)
+
+        #Evaluating the cnn model
+        val_loss_c, val_acc_c = evaluate(cnn_model, val_loader, criterion, DEVICE)
+
+        #Print epoch summary 
+        epoch_time = time.time() - epoch_start
+        print(f"Epoch [{epoch + 1}/{NUM_EPOCHS}] - {epoch_time:.1f}s")
+        
+        print(f"================================ Baseline ====================================")
+        print(f"Train Loss: {train_loss_b:.4f} | Train Accuracy: {train_acc_b:.3f}")
+        print(f"Val Loss: {val_loss_b:.4f} | Val Accuracy: {val_acc_b:.3f}")
+
+        print(f"=================================== CNN ======================================")
+        print(f"Train Loss: {train_loss_c:.4f} | Train Accuracy: {train_acc_c:.3f}")
+        print(f"Val Loss: {val_loss_c:.4f} | Val Accuracy: {val_acc_c:.3f}")
+
+        print("-" * 90)
+
+    # =====================================================
+    # 6. Saving Trained Models (pretty self-explanatory)
+    # =====================================================
+
+    print("Process: Saving models...")
+    
+    Path("outputs/models").mkdir(parents=True, exist_ok=True) #Making the directory to save them in
+
+    torch.save(baseline_model.state_dict(), "outputs/models/baseline_final.pth")
+    torch.save(cnn_model.state_dict(), "outputs/models/cnn_final.pth")
+
+    print("\n Training completed! Models saved successfully! Letsss goooooo")
+
+#Training epoch function:
+
+def train_one_epoch(model, dataloader, optimizer, criterion, device):
+
+    model.train() #The model is now in training mode
+    total_loss = 0.0 #Setting variable that tracks total loss
+    correct = 0 #Correctness tracker
+    total_samples = 0 #Sample tracker
+
+    for input_ids, labels in dataloader:
+        input_ids = input_ids.to(device)
+        labels = labels.to(device)
+
+        optimizer.zero_grad() #So this clears the previous, older gradients
+        outputs = model(input_ids) #This is the forward pass
+        loss = criterion(outputs, labels) #Computing the loss
+
+        loss.backward() #This is the backward pass to compute the gradients
+        optimizer.step() #Updating model weights
+
+        #Computing statistics
+        total_loss += loss.item() * input_ids.size(0) 
+        _, predicted = torch.max(outputs, dim=1)
+        correct += (predicted == labels).sum().item()
+        total_samples += labels.size(0)
+
+    #Even more statistics yayay
+    avg_loss = total_loss / total_samples
+    accuracy = correct / total_samples
+
+    return avg_loss, accuracy
+
+
+#Evaluation function
+
+def evaluate(model, dataloader, criterion, device):
+
+    model.eval() #Setting model to the evaluation mode
+    total_loss = 0.0 #Setting loss tracker to zero
+    correct = 0 #Setting correct tracker to zero
+    total_samples = 0 #Setting sample tracker to zero
+
+    with torch.no_grad():
+        for input_ids, labels in dataloader:
+            input_ids = input_ids.to(device)
+            labels = labels.to(device)
+
+            outputs = model(input_ids)
+            loss = criterion(outputs, labels)
+
+            #The following is the same as in the training epoch function
+
+            #Computing statistics
+            total_loss += loss.item() * input_ids.size(0) 
+            _, predicted = torch.max(outputs, dim=1)
+            correct += (predicted == labels).sum().item()
+            total_samples += labels.size(0)
+
+    #Even more statistics yayay
+    avg_loss = total_loss / total_samples
+    accuracy = correct / total_samples
+
+    return avg_loss, accuracy
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
