@@ -72,8 +72,9 @@ class BaselineModel(nn.Module):
 
         return logits 
     
-    #Helper function for loading the GloVe weights:
+    
 
+#Helper function for loading the GloVe weights:
 
 def load_glove_weights(model, glove_weights: torch.Tensor, freeze: bool = True):
     
