@@ -18,7 +18,8 @@ class BaselineModel(nn.Module):
                  embed_dim: int = 100, #This is the dimension of the GloVe embeddings
                  hidden_dim: int = 128, #This is the size of the hidden layer in the classifier
                  num_classes: int = 6, #This is the number of emotions that the tweets will be classified into
-                 padding_idx: int = 0): #This is the index used for padding tokens
+                 padding_idx: int = 0,
+                 freeze_embeddings: bool = True): #This is the index used for padding tokens
         
         super().__init__() #Initialize model. Architecture is basically defined here from what I can tell.
         
@@ -32,7 +33,15 @@ class BaselineModel(nn.Module):
             padding_idx=padding_idx
         )
 
-        #Todo: load pre-trained GloVe weights here
+        #Todo: load pre-trained GloVe weights here?
+
+        # ===== Bonus =====
+        # Freezing Logic
+        # =================
+
+        self.freeze_embeddings = freeze_embeddings
+        if freeze_embeddings:
+            self.embedding.weight.requires_grad = False #Freeze
         
         # ==============
         # 2. Classifier
@@ -59,19 +68,19 @@ class BaselineModel(nn.Module):
 
         #Step 3: Here Comes the Classifier (dun-dun-da!)
 
-        logits = self.classifer(pooled)
+        logits = self.classifier(pooled)
 
         return logits 
     
     #Helper function for loading the GloVe weights:
 
 
-def load_glove_weights(model: BaselineModel, glove_weights: torch.Tensor):
+def load_glove_weights(model, glove_weights: torch.Tensor, freeze: bool = True):
     
     with torch.no_grad():
         model.embedding.weight.copy_(glove_weights)
 
-    
+    model.embedding.weight.requires_grad = not freeze #True means it is trainable, false means it is frozen
+    model.freeze_embeddings = freeze
 
-        
 
