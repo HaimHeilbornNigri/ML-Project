@@ -1,5 +1,5 @@
 import torch
-import torch.nn as nn
+import torch.nn as nn #Essential as life itself
 
 """
 The baseline model will have the following steps:
@@ -20,13 +20,13 @@ class BaselineModel(nn.Module):
                  num_classes: int = 6, #This is the number of emotions that the tweets will be classified into
                  padding_idx: int = 0): #This is the index used for padding tokens
         
-        super().__init__() #Initialize model
+        super().__init__() #Initialize model. Architecture is basically defined here from what I can tell.
         
         # ====================
         # 1. Embedding Layer
         # ====================
 
-        self.embedding = nn.Embedding( #V
+        self.embedding = nn.Embedding( #This will convert word indices to vectors so we can actually use 'em
             num_embeddings=vocab_size,
             embedding_dim=embed_dim,
             padding_idx=padding_idx
@@ -39,13 +39,13 @@ class BaselineModel(nn.Module):
         # ==============
 
         self.classifier == nn.Sequential(
-            nn.Linear(embed_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Dropout(p=0.3), #Maybe make this adjustable later?
-            nn.Linear(hidden_dim, num_classes)
+            nn.Linear(embed_dim, hidden_dim), #These are fully connected layers btw
+            nn.ReLU(), #Activation stufff
+            nn.Dropout(p=0.3), #Maybe make this adjustable later? Well at least it won't over-adjust (hahaha worst joke ever)
+            nn.Linear(hidden_dim, num_classes) 
         )
 
-    #Forward pass stuff
+    #Forward pass stuff. Basically data flow through model go brrrrr
 
     def forward(self, input_ids: torch.Tensor) -> torch.Tensor: #input_ids is the tensor of the shape containing the word indices btw. The function should return logits hopefully.
         
@@ -55,7 +55,7 @@ class BaselineModel(nn.Module):
 
         #Step 2: Global Average Pooling
 
-        pooled = torch.mean(embedded, dim=1)
+        pooled = torch.mean(embedded, dim=1) #I ♥ averages
 
         #Step 3: Here Comes the Classifier (dun-dun-da!)
 
