@@ -38,7 +38,7 @@ class BaselineModel(nn.Module):
         # 2. Classifier
         # ==============
 
-        self.classifier == nn.Sequential(
+        self.classifier = nn.Sequential(
             nn.Linear(embed_dim, hidden_dim), #These are fully connected layers btw
             nn.ReLU(), #Activation stufff
             nn.Dropout(p=0.3), #Maybe make this adjustable later? Well at least it won't over-adjust (hahaha worst joke ever)
