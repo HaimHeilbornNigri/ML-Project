@@ -9,9 +9,9 @@ import time #Need this one to measure how long an epoch takes
 import numpy as np
 
 #Import models and dataset
-from models.baseline import BaselineModel, load_glove_weights
-from models.cnn_model import EmotionCNN, load_glove_weights as load_glove_cnn
-from dataset import create_dataloaders
+from src.models.baseline import BaselineModel, load_glove_weights
+from src.models.cnn_model import EmotionCNN, load_glove_weights as load_glove_cnn
+from src.dataset import create_dataloaders
 
 """
 This training script trains both models, performs validation, logs metrics, and saves the final trained models.
@@ -38,9 +38,10 @@ def main():
 
     print("Process: Loading datasets and creating dataloaders...")
 
-    train_loader, val_loader, vocab, = create_dataloaders(
-        train_csv='data/train.csv',
-        test_csv='data/test.csv',
+    train_loader, val_loader, test_loader, vocab = create_dataloaders(
+        train_csv='data/kaggle/train.txt',
+        val_csv='data/kaggle/val.txt',
+        test_csv='data/kaggle/test.txt',
         batch_size=BATCH_SIZE,
         max_seq_length=MAX_SEQ_LENGTH
     )
@@ -100,6 +101,15 @@ def main():
         cnn_model.embedding.weight.requires_grad = False
 
     print("GloVe embeddings loaded successfully into both models!!!")
+
+    #Adjusting for bug where embeddings are on cpu but other stuff is on gpu
+    baseline_model = baseline_model.to(DEVICE)
+    cnn_model = cnn_model.to(DEVICE)
+
+    glove_weights = glove_weights.to(DEVICE)
+
+    baseline_model.embedding.weight.data = glove_weights
+    cnn_model.embedding.weight.data = glove_weights
 
     # ====================================================
     # 4. Defining the Loss Function and the Optimizers

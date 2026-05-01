@@ -1,4 +1,4 @@
-from preprocessing import tokenize
+from src.preprocessing import tokenize
 
 class Vocabulary:
     def __init__(self):

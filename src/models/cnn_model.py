@@ -19,7 +19,7 @@ class EmotionCNN(nn.Module):
     def __init__(self,
                  vocab_size: int,
                  embed_dim: int = 100,
-                 num_filters: int = 100,
+                 num_filters: int = 100,    
                  hidden_dim: int = 128,
                  num_classes: int = 6,
                  dropout_rate: float = 0.5,
