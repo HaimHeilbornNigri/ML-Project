@@ -148,6 +148,19 @@ def save_evaluation_results(preds, labels, dataset, model_name):
     #Confusion Matrix
     cm = confusion_matrix(labels, preds)
     plt.figure(figsize=(8, 6))
-    sns.
+    sns.heatmap(
+        cm, 
+        annot=True, 
+        fmt='d', 
+        cmap='Blues',
+        xticklabels=dataset.label_names,
+        yticklabels=dataset.label_names)
+    
+    plt.title(f"Confusion Matrix - {model_name}")
+    plt.xlabel("Predicted")
+    plt.ylabel("True")
+    plt.tight_layout()
+    plt.savefig(f"outputs/evaluation/{model_name.lower()}_cm.png")
+    plt.close()
 
 
