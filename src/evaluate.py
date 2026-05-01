@@ -8,8 +8,8 @@ from pathlib import Path
 import numpy as np
 
 #Import models
-from models.baseline import BaselineModel
-from models.cnn_model import EmotionCNN
+from src.models.baseline import BaselineModel
+from src.models.cnn_model import EmotionCNN
 
 def evaluate_models():
 
