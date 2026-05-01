@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader #This one is for efficient batch loading
 import matplotlib.pyplot as plt #Using this to plot stuff
 from pathlib import Path #This one is for creating directories
 import time #Need this one to measure how long an epoch takes
+import numpy as np
 
 #Import models and dataset
 from models.baseline import BaselineModel, load_glove_weights
@@ -81,13 +82,24 @@ def main():
 
     print("Process: Loading GloVe Embeddings")
 
-    """
+    glove_path = "data/glove.6B.100d.txt"
 
-    glove_weights = torch.load(insert path to glove weights here later)
-    load_glove_weights(baseline_model, glove_weights, freeze=FREEZE_EMBEDDINGS)
-    load_glove_cnn(cnn_model, glove_weights, freeze=FREEZE_EMBEDDINGS)
+    glove_weights = build_glove_matrix(
+        glove_path=glove_path,
+        vocab=vocab,
+        embed_dim=EMBED_DIM
+    )
 
-    """
+    baseline_model.embedding.weight.data = glove_weights.clone()
+    cnn_model.embedding.weight.data = glove_weights.clone()
+
+    #To freeze or not to freeze, that is the question:
+
+    if FREEZE_EMBEDDINGS:
+        baseline_model.embedding.weight.requires_grad = False
+        cnn_model.embedding.weight.requires_grad = False
+
+    print("GloVe embeddings loaded successfully into both models!!!")
 
     # ====================================================
     # 4. Defining the Loss Function and the Optimizers
@@ -219,6 +231,29 @@ def evaluate(model, dataloader, criterion, device):
     accuracy = correct / total_samples
 
     return avg_loss, accuracy
+
+def build_glove_matrix(glove_path, vocab, embed_dim=100):
+    print("Process: Loading GloVe...")
+
+    glove = {}
+
+    with open(glove_path, "r", encoding="utf8") as f:
+        for line in f:
+            parts = line.split()
+            word = parts[0]
+            vec = np.asarray(parts[1:], dtype=np.float32)
+            glove[word] = vec
+
+    vocab_size = len(vocab.word2idx)
+    matrix = np.random.normal(scale=0.6, size=(vocab_size, embed_dim))
+
+    matrix[0] = np.zeros(embed_dim)
+
+    for word, idx in vocab.word2idx.items():
+        if word in glove:
+            matrix[idx] = glove[word]
+
+    return torch.tensor(matrix, dtype=torch.float32)
 
 if __name__ == "__main__":
     main()
