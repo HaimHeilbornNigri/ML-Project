@@ -1,12 +1,9 @@
 import re
 
-def clean_text(text):
+def clean_text(text: str) -> str:
     text = text.lower()
-    text = re.sub(r"http\S+", "", text)
-    text = re.sub(r"@\w+", "", text)
-    text = re.sub(r"#\w+", "", text)
-    text = re.sub(r"[^a-z\s]", "", text)
+    text = re.sub(r"[^a-zA-Z\s]", "", text)
     return text
 
-def tokenize(text):
-    return text.split()
+def tokenize(text: str):
+    return clean_text(text).split()

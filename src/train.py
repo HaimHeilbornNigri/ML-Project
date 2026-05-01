@@ -47,6 +47,12 @@ def main():
     vocab_size = len(vocab)
     print(f'Vocabulary size: {vocab_size}')
 
+    #Saving vocabulary for evaluation consistency
+    Path("outputs/models").mkdir(parents=True, exist_ok=True)
+    torch.save(vocab, "outputs/models/vocab.pth")
+
+    print("Vocabulary has been SAVED to outputs/models/vocab.pth")
+
     # =======================
     # 2. Initializing Models
     # =======================
