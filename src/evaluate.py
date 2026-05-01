@@ -28,9 +28,11 @@ def evaluate_models():
 
     print("Process: Loading dataset...")
     from dataset import EmotionDataset
+    vocab = torch.load("outputs/models/vocab.pth")
 
     test_dataset = EmotionDataset(
         csv_file='data/test.csv',
+        vocab=vocab,
         max_seq_length=MAX_SEQ_LENGTH,
         is_train = False
     )
