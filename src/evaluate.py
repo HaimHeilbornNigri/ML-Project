@@ -7,13 +7,13 @@ from sklearn.metrics import confusion_matrix, classification_report
 from pathlib import Path
 import numpy as np
 
-#Import models
+# Import models
 from src.models.baseline import BaselineModel
 from src.models.cnn_model import EmotionCNN
+from src.dataset import EmotionDataset
 
 def evaluate_models():
-
-    DEVICE = torch.device('cuda'if torch.cuda.is_available() else 'cpu')
+    DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {DEVICE}")
 
     MAX_SEQ_LENGTH = 50
@@ -25,19 +25,17 @@ def evaluate_models():
     # =======================
     # 1. Loading the Dataset
     # =======================
-
-    print("Process: Loading dataset...")
-    from dataset import EmotionDataset
-    vocab = torch.load("outputs/models/vocab.pth")
+    print("Process: Loading test dataset...")
+    
+    vocab = torch.load("outputs/models/vocab.pth", weights_only=False)
 
     test_dataset = EmotionDataset(
-        csv_file='data/test.csv',
+        file_path='data/kaggle/test.txt', # Fixed path
         vocab=vocab,
         max_seq_length=MAX_SEQ_LENGTH,
-        is_train = False
+        is_train=False
     )
     
-    #Dataloader with batch size of 1 for an analysis of a singular sample
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
         batch_size=64,
@@ -49,8 +47,7 @@ def evaluate_models():
     # =========================
     # 2. Load Trained Models
     # =========================
-
-    print("Process: Loading in trained models...")
+    print("Process: Loading trained models...")
 
     baseline_model = BaselineModel(
         vocab_size=vocab_size,
@@ -62,37 +59,33 @@ def evaluate_models():
     cnn_model = EmotionCNN(
         vocab_size=vocab_size,
         embed_dim=EMBED_DIM,
-        num_filters = NUM_FILTERS,
+        num_filters=NUM_FILTERS,
         hidden_dim=HIDDEN_DIM,
         dropout_rate=DROPOUT_RATE,
         freeze_embeddings=False
     ).to(DEVICE)
 
-    #Loading in the saved weights
-    
+    # Load weights
     baseline_model.load_state_dict(torch.load('outputs/models/baseline_final.pth', map_location=DEVICE))
     cnn_model.load_state_dict(torch.load('outputs/models/cnn_final.pth', map_location=DEVICE))
 
     baseline_model.eval()
     cnn_model.eval()
 
-    print("Models have been loaded in successfully")
+    print("Models loaded successfully!")
 
     # ==========================
-    # 3. Evaluating the Models
+    # 3. Get Predictions
     # ==========================
-
-    print("Evaluating the baseline model...")
+    print("Evaluating Baseline model...")
     baseline_preds, baseline_labels = get_predictions(baseline_model, test_loader, DEVICE)
 
-    print("Evaluating the baseline model...")
+    print("Evaluating CNN model...")
     cnn_preds, cnn_labels = get_predictions(cnn_model, test_loader, DEVICE)
 
     # =========================================
-    # 4. Generating Metrics and Visualizations
+    # 4. Save Results
     # =========================================
-
-    #Baseline model
     save_evaluation_results(
         preds=baseline_preds,
         labels=baseline_labels,
@@ -100,19 +93,16 @@ def evaluate_models():
         model_name="Baseline"
     )
 
-    #CNN model
     save_evaluation_results(
         preds=cnn_preds,
         labels=cnn_labels,
         dataset=test_dataset,
-        model_name="CNN "
+        model_name="CNN"
     )
 
-    print("Evaluation completed! Check out the 'outputs/' directory for results!")
-
+    print("Evaluation completed! Check 'outputs/evaluation/' directory.")
 
 def get_predictions(model, dataloader, device):
-
     model.eval()
     all_preds = []
     all_labels = []
@@ -130,33 +120,33 @@ def get_predictions(model, dataloader, device):
 
     return np.array(all_preds), np.array(all_labels)
     
-def save_evaluation_results(preds, labels, dataset, model_name):
 
-    #Create the output folder
+def save_evaluation_results(preds, labels, dataset, model_name):
     Path("outputs/evaluation").mkdir(parents=True, exist_ok=True)
 
-    #The Classificatin Report (top secret [classified])
+    #Creating label_names if they are not present
+    if not hasattr(dataset, 'label_names'):
+        dataset.label_names = list(dataset.label2idx.keys())
+
     report = classification_report(
         labels, 
         preds,
         target_names=dataset.label_names,
-        digits=4)
+        digits=4
+    )
     
-    print(f"\n============== {model_name} Results =============")
+    print(f"\n============== {model_name} Results =============\n")
     print(report)
 
-    with open(f"outputs/evaluation/{model_name.lower()}_report.txt", "w") as f: f.write(report)
+    with open(f"outputs/evaluation/{model_name.lower()}_report.txt", "w") as f:
+        f.write(report)
 
-    #Confusion Matrix
+    # Confusion Matrix
     cm = confusion_matrix(labels, preds)
     plt.figure(figsize=(8, 6))
-    sns.heatmap(
-        cm, 
-        annot=True, 
-        fmt='d', 
-        cmap='Blues',
-        xticklabels=dataset.label_names,
-        yticklabels=dataset.label_names)
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+                xticklabels=dataset.label_names,
+                yticklabels=dataset.label_names)
     
     plt.title(f"Confusion Matrix - {model_name}")
     plt.xlabel("Predicted")
@@ -165,4 +155,5 @@ def save_evaluation_results(preds, labels, dataset, model_name):
     plt.savefig(f"outputs/evaluation/{model_name.lower()}_cm.png")
     plt.close()
 
-
+if __name__ == "__main__":
+    evaluate_models()

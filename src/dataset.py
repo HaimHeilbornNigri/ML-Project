@@ -20,14 +20,14 @@ class EmotionDataset(Dataset):
         # LABEL HANDLING (FIXED)
         # ======================
         if label2idx is None:
-            # only build from training set
+            #only build from training set
             label_names = sorted(set(labels))
             self.label2idx = {label: i for i, label in enumerate(label_names)}
         else:
-            # use shared mapping (IMPORTANT FIX)
+            #use shared mapping
             self.label2idx = label2idx
 
-        # vocab handling
+        #vocab handling
         if is_train:
             self.vocab = Vocabulary()
             self.vocab.build(texts)
@@ -35,10 +35,10 @@ class EmotionDataset(Dataset):
             assert vocab is not None, "Must pass vocab for validation/test"
             self.vocab = vocab
 
-        # encode
+        #encode
         self.encoded_texts = [self.vocab.encode(t) for t in texts]
 
-        # safe label encoding (prevents crash)
+        #safe label encoding (prevents crash)
         self.labels = []
         for l in labels:
             if l in self.label2idx:
@@ -105,9 +105,9 @@ def create_dataloaders(train_csv, val_csv, test_csv, batch_size, max_seq_length)
     return train_loader, val_loader, test_loader, vocab
 
 
-# ============================
-# FILE LOADER (ROBUST)
-# ============================
+# ===================
+# FILE LOADER 
+# ===================
 
 def load_kaggle_file(path):
     import pandas as pd
@@ -115,17 +115,17 @@ def load_kaggle_file(path):
     with open(path, "r", encoding="utf-8") as f:
         lines = [l.strip() for l in f.readlines() if l.strip()]
 
-    # ALWAYS assume last delimiter split is label
+    #Always assume last delimiter split is label
     split_data = []
 
     for line in lines:
-        # split ONLY on last occurrence
+        #Split only on the last occurrence
         if "\t" in line:
             parts = line.rsplit("\t", 1)
         elif "," in line:
             parts = line.rsplit(",", 1)
         else:
-            parts = line.rsplit(";", 1)  # IMPORTANT FIX
+            parts = line.rsplit(";", 1)
 
         if len(parts) == 2:
             text, label = parts

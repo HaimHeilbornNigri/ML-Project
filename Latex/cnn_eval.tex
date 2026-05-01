@@ -1,0 +1,27 @@
+\documentclass{article}
+\usepackage{booktabs}
+
+\begin{document}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccc}
+\hline
+Class & Precision & Recall & F1-score & Support \\
+\hline
+anger    & 0.8213 & 0.8691 & 0.8445 & 275 \\
+fear     & 0.8043 & 0.8438 & 0.8235 & 224 \\
+joy      & 0.8864 & 0.9094 & 0.8977 & 695 \\
+love     & 0.7365 & 0.6855 & 0.7101 & 159 \\
+sadness  & 0.9290 & 0.9002 & 0.9143 & 581 \\
+surprise & 0.6400 & 0.4848 & 0.5517 & 66 \\
+\hline
+Accuracy & \multicolumn{3}{c}{0.8620} & 2000 \\
+Macro avg    & 0.8029 & 0.7821 & 0.7903 & 2000 \\
+Weighted avg & 0.8606 & 0.8620 & 0.8606 & 2000 \\
+\hline
+\end{tabular}
+\caption{CNN Model Evaluation Results}
+\end{table}
+
+\end{document}
