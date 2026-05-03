@@ -1,4 +1,4 @@
-# demo.py
+# demo.py (disclaimer: this file was AI-generated for convenience)
 import torch
 from src.models.baseline import BaselineModel
 from src.models.cnn_model import EmotionCNN
